@@ -1,0 +1,1 @@
+docker exec -it blogagregator-postgres-1 psql

@@ -26,7 +26,9 @@ func (c *Config) SetUser(name string) {
 }
 
 func getConfigFilePath() (string, error) {
-	fp, _ := os.Getwd()
+	//fp, _ := os.Getwd()
+	fp, _ := os.UserHomeDir()
+
 	fp += "/" + configFileName
 	return fp, nil
 }
