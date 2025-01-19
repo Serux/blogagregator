@@ -10,11 +10,12 @@ VALUES (
 )
 RETURNING *;
 
-/*
--- name: GetOneUserByName :one
-SELECT * FROM users 
-WHERE users.name=$1;
 
+-- name: GetAllFeeds :many
+SELECT feeds.name, feeds.url, users.name as username FROM feeds
+LEFT JOIN users
+ON feeds.user_id = users.id;
+/*
 -- name: ResetUsers :exec
 DELETE FROM users;
 

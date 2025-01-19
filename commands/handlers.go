@@ -37,6 +37,17 @@ func (c *Commands) Run(s *State, cmd Command) error {
 	return fun(s, cmd)
 }
 
+func HandlerGetAllFeeds(s *State, cmd Command) error {
+
+	ret, err := s.Db.GetAllFeeds(context.Background())
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(ret)
+	return nil
+}
+
 func HandlerAddFeed(s *State, cmd Command) error {
 	if len(cmd.Arguments) < 2 {
 		return fmt.Errorf("format: addfeed name url")
