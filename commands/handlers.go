@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/serux/blogagregator/internal/config"
 	"github.com/serux/blogagregator/internal/database"
+	"github.com/serux/blogagregator/rss"
 )
 
 type State struct {
@@ -36,12 +37,24 @@ func (c *Commands) Run(s *State, cmd Command) error {
 	return fun(s, cmd)
 }
 
+func HandlerAgg(s *State, cmd Command) error {
+
+	ret, err := rss.FetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+
+	if err != nil {
+		return err
+	}
+	fmt.Println(ret)
+
+	return nil
+}
+
 func HandlerReset(s *State, cmd Command) error {
 
 	err := s.Db.ResetUsers(context.Background())
 	if err != nil {
-		fmt.Println("Cannot reset users:", err)
-		os.Exit(1)
+		fmt.Println("Cannot reset users:")
+		return err
 	}
 
 	fmt.Println("Reset successful")
@@ -53,8 +66,8 @@ func HandlerGetUsers(s *State, cmd Command) error {
 
 	users, err := s.Db.GetUsers(context.Background())
 	if err != nil {
-		fmt.Println("Cannot get users:", err)
-		os.Exit(1)
+		fmt.Println("Cannot get users:")
+		return err
 	}
 
 	for _, user := range users {
