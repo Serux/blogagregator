@@ -37,6 +37,31 @@ func (c *Commands) Run(s *State, cmd Command) error {
 	return fun(s, cmd)
 }
 
+func HandlerAddFeed(s *State, cmd Command) error {
+	if len(cmd.Arguments) < 2 {
+		return fmt.Errorf("format: addfeed name url")
+	}
+	user, err := s.Db.GetOneUserByName(context.Background(), s.Config.Current_user_name)
+	if err != nil {
+		return err
+	}
+
+	params := database.CreateFeedParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      cmd.Arguments[0],
+		Url:       cmd.Arguments[1],
+		UserID:    user.ID,
+	}
+	ret, err := s.Db.CreateFeed(context.Background(), params)
+	if err != nil {
+		return err
+	}
+	fmt.Println(ret)
+	return nil
+}
+
 func HandlerAgg(s *State, cmd Command) error {
 
 	ret, err := rss.FetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
