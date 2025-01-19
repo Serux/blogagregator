@@ -49,6 +49,25 @@ func HandlerReset(s *State, cmd Command) error {
 	return nil
 }
 
+func HandlerGetUsers(s *State, cmd Command) error {
+
+	users, err := s.Db.GetUsers(context.Background())
+	if err != nil {
+		fmt.Println("Cannot get users:", err)
+		os.Exit(1)
+	}
+
+	for _, user := range users {
+		current := ""
+		if user.Name == s.Config.Current_user_name {
+			current = "(current)"
+		}
+		fmt.Printf("* %v %v\n", user.Name, current)
+	}
+
+	return nil
+}
+
 func HandlerLogin(s *State, cmd Command) error {
 	if len(cmd.Arguments) == 0 {
 		return fmt.Errorf("username required")
