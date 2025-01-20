@@ -30,6 +30,8 @@ func main() {
 	cmds.Register("agg", commands.HandlerAgg)
 	cmds.Register("addfeed", commands.HandlerAddFeed)
 	cmds.Register("feeds", commands.HandlerGetAllFeeds)
+	cmds.Register("follow", commands.HandlerFollow)
+	cmds.Register("following", commands.HandlerFollowing)
 
 	if len(os.Args) < 2 {
 		fmt.Println("Not enough args.")

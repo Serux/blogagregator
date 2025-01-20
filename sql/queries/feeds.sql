@@ -15,10 +15,7 @@ RETURNING *;
 SELECT feeds.name, feeds.url, users.name as username FROM feeds
 LEFT JOIN users
 ON feeds.user_id = users.id;
-/*
--- name: ResetUsers :exec
-DELETE FROM users;
 
--- name: GetUsers :many
-SELECT * FROM users;
-*/
+-- name: GetFeedByURL :one
+SELECT * FROM feeds
+WHERE feeds.url = $1;

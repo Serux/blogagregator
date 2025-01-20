@@ -36,6 +36,55 @@ func (c *Commands) Run(s *State, cmd Command) error {
 	}
 	return fun(s, cmd)
 }
+func HandlerFollowing(s *State, cmd Command) error {
+	user, err := s.Db.GetOneUserByName(context.Background(), s.Config.Current_user_name)
+	if err != nil {
+		return err
+	}
+	feedFollows, err := s.Db.GetFeedFollowsForUser(context.Background(), user.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range feedFollows {
+		fmt.Println(v.Feedname)
+	}
+
+	return nil
+}
+
+func HandlerFollow(s *State, cmd Command) error {
+
+	if len(cmd.Arguments) < 1 {
+		return fmt.Errorf("format: follow url")
+	}
+
+	user, err := s.Db.GetOneUserByName(context.Background(), s.Config.Current_user_name)
+	if err != nil {
+		return err
+	}
+
+	feed, err := s.Db.GetFeedByURL(context.Background(), cmd.Arguments[0])
+	if err != nil {
+		return err
+	}
+
+	params := database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    user.ID,
+		FeedID:    feed.ID,
+	}
+	feedFollow, err := s.Db.CreateFeedFollow(context.Background(), params)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(feedFollow)
+	return nil
+}
 
 func HandlerGetAllFeeds(s *State, cmd Command) error {
 
@@ -65,11 +114,22 @@ func HandlerAddFeed(s *State, cmd Command) error {
 		Url:       cmd.Arguments[1],
 		UserID:    user.ID,
 	}
-	ret, err := s.Db.CreateFeed(context.Background(), params)
+	feed, err := s.Db.CreateFeed(context.Background(), params)
 	if err != nil {
 		return err
 	}
-	fmt.Println(ret)
+	feedfollowparams := database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    user.ID,
+		FeedID:    feed.ID,
+	}
+	_, err = s.Db.CreateFeedFollow(context.Background(), feedfollowparams)
+	if err != nil {
+		return err
+	}
+	fmt.Println(feed)
 	return nil
 }
 
