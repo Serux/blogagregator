@@ -48,6 +48,22 @@ func MiddlewareLoggedIn(handler func(s *State, cmd Command, user database.User) 
 
 }
 
+func HandlerUnfollow(s *State, cmd Command, user database.User) error {
+	if len(cmd.Arguments) < 1 {
+		return fmt.Errorf("format: unfollow url")
+	}
+	params := database.DeleteFeedFollowsUserIDAndURLParams{
+		UserID: user.ID,
+		Url:    cmd.Arguments[0],
+	}
+	err := s.Db.DeleteFeedFollowsUserIDAndURL(context.Background(), params)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func HandlerFollowing(s *State, cmd Command, user database.User) error {
 
 	feedFollows, err := s.Db.GetFeedFollowsForUser(context.Background(), user.ID)
