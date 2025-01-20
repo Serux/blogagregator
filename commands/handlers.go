@@ -36,11 +36,20 @@ func (c *Commands) Run(s *State, cmd Command) error {
 	}
 	return fun(s, cmd)
 }
-func HandlerFollowing(s *State, cmd Command) error {
-	user, err := s.Db.GetOneUserByName(context.Background(), s.Config.Current_user_name)
-	if err != nil {
-		return err
+
+func MiddlewareLoggedIn(handler func(s *State, cmd Command, user database.User) error) func(*State, Command) error {
+	return func(s *State, c Command) error {
+		user, err := s.Db.GetOneUserByName(context.Background(), s.Config.Current_user_name)
+		if err != nil {
+			return err
+		}
+		return handler(s, c, user)
 	}
+
+}
+
+func HandlerFollowing(s *State, cmd Command, user database.User) error {
+
 	feedFollows, err := s.Db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
 		return err
@@ -53,15 +62,10 @@ func HandlerFollowing(s *State, cmd Command) error {
 	return nil
 }
 
-func HandlerFollow(s *State, cmd Command) error {
+func HandlerFollow(s *State, cmd Command, user database.User) error {
 
 	if len(cmd.Arguments) < 1 {
 		return fmt.Errorf("format: follow url")
-	}
-
-	user, err := s.Db.GetOneUserByName(context.Background(), s.Config.Current_user_name)
-	if err != nil {
-		return err
 	}
 
 	feed, err := s.Db.GetFeedByURL(context.Background(), cmd.Arguments[0])
@@ -97,13 +101,9 @@ func HandlerGetAllFeeds(s *State, cmd Command) error {
 	return nil
 }
 
-func HandlerAddFeed(s *State, cmd Command) error {
+func HandlerAddFeed(s *State, cmd Command, user database.User) error {
 	if len(cmd.Arguments) < 2 {
 		return fmt.Errorf("format: addfeed name url")
-	}
-	user, err := s.Db.GetOneUserByName(context.Background(), s.Config.Current_user_name)
-	if err != nil {
-		return err
 	}
 
 	params := database.CreateFeedParams{
