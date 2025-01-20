@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -150,14 +149,18 @@ func HandlerAddFeed(s *State, cmd Command, user database.User) error {
 }
 
 func HandlerAgg(s *State, cmd Command) error {
-
-	ret, err := rss.FetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
-
+	if len(cmd.Arguments) < 1 {
+		return fmt.Errorf("format: agg time (1s,1m,1h...)")
+	}
+	time_between_reqs, err := time.ParseDuration(cmd.Arguments[0])
 	if err != nil {
 		return err
 	}
-	fmt.Println(ret)
-
+	fmt.Println("Collectiong feeds every ", time_between_reqs)
+	ticker := time.NewTicker(time_between_reqs)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
 	return nil
 }
 
@@ -199,8 +202,8 @@ func HandlerLogin(s *State, cmd Command) error {
 	}
 	_, err := s.Db.GetOneUserByName(context.Background(), cmd.Arguments[0])
 	if err != nil {
-		fmt.Println("Cannot find user:", err)
-		os.Exit(1)
+		fmt.Println("Cannot find user:")
+		return err
 	}
 	s.Config.SetUser(cmd.Arguments[0])
 	fmt.Println("Username Set")
@@ -223,12 +226,43 @@ func HandlerRegister(s *State, cmd Command) error {
 		},
 	)
 	if err != nil {
-		fmt.Println("User exists: ", err)
-		os.Exit(1)
+		fmt.Println("User exists: ")
+		return err
 	}
 
 	s.Config.SetUser(cmd.Arguments[0])
 	fmt.Println("User created:", us)
+
+	return nil
+}
+
+func scrapeFeeds(s *State) error {
+	nextFeed, err := s.Db.GetNextFeedToFecth(context.Background())
+	if err != nil {
+		fmt.Println("No feeds: ")
+		return err
+	}
+	err = s.Db.MarkFeedFetched(context.Background(), nextFeed.ID)
+	if err != nil {
+		fmt.Println("Err marking feed: ")
+		return err
+	}
+
+	feed, err := rss.FetchFeed(context.Background(), nextFeed.Url)
+	if err != nil {
+		return err
+	}
+	//fmt.Println("URL: ", feed.Channel.Link)
+	//fmt.Println("Title: ", feed.Channel.Title)
+	fmt.Println("Description: ", feed.Channel.Description)
+	fmt.Println()
+	for _, v := range feed.Channel.Item {
+		//fmt.Println("Date: ", v.PubDate)
+		//fmt.Println("Link: ", v.Link)
+		fmt.Println("Title: ", v.Title)
+		//fmt.Println("Description: ", v.Description)
+		//fmt.Println()
+	}
 
 	return nil
 }
