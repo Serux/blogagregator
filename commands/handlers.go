@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -45,6 +46,29 @@ func MiddlewareLoggedIn(handler func(s *State, cmd Command, user database.User) 
 		return handler(s, c, user)
 	}
 
+}
+
+func HandlerBrowse(s *State, cmd Command, user database.User) error {
+	limit := 2
+	var err error
+	if len(cmd.Arguments) > 0 {
+		limit, err = strconv.Atoi(cmd.Arguments[0])
+		if err != nil {
+			return err
+		}
+	}
+	params := database.GetPostsForUserParams{
+		UserID: user.ID,
+		Limit:  int32(limit),
+	}
+	posostuser, err := s.Db.GetPostsForUser(context.Background(), params)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(posostuser)
+
+	return nil
 }
 
 func HandlerUnfollow(s *State, cmd Command, user database.User) error {
@@ -252,17 +276,41 @@ func scrapeFeeds(s *State) error {
 	if err != nil {
 		return err
 	}
-	//fmt.Println("URL: ", feed.Channel.Link)
-	//fmt.Println("Title: ", feed.Channel.Title)
-	fmt.Println("Description: ", feed.Channel.Description)
-	fmt.Println()
+
 	for _, v := range feed.Channel.Item {
+		tim, _ := time.Parse(time.Layout, v.PubDate)
+		params := database.InsertPostParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			Title:       v.Title,
+			Url:         v.Link,
+			Description: v.Description,
+			PublishedAt: tim,
+			FeedID:      nextFeed.ID,
+		}
+		_, err := s.Db.InsertPost(context.Background(), params)
+		if err != nil {
+			return err
+		}
 		//fmt.Println("Date: ", v.PubDate)
 		//fmt.Println("Link: ", v.Link)
-		fmt.Println("Title: ", v.Title)
+		//fmt.Println("Title: ", v.Title)
 		//fmt.Println("Description: ", v.Description)
 		//fmt.Println()
 	}
+
+	//fmt.Println("URL: ", feed.Channel.Link)
+	//fmt.Println("Title: ", feed.Channel.Title)
+	//fmt.Println("Description: ", feed.Channel.Description)
+	//fmt.Println()
+	//for _, v := range feed.Channel.Item {
+	//fmt.Println("Date: ", v.PubDate)
+	//fmt.Println("Link: ", v.Link)
+	//fmt.Println("Title: ", v.Title)
+	//fmt.Println("Description: ", v.Description)
+	//fmt.Println()
+	//}
 
 	return nil
 }
